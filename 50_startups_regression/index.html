@@ -11,14 +11,14 @@
   <style>
     :root {
       color-scheme: light;
-      --paper: #f3f4ee;
+      --paper: #f4f5ef;
       --white: #fff;
       --ink: #172522;
       --muted: #66736d;
       --line: #dce1d9;
       --green: #21634b;
       --lime: #c6e56b;
-      --orange: #dd684b;
+      --orange: #d9543b;
       --blue: #2563eb;
       --serif: "Fraunces", "Noto Sans TC", serif;
       --sans: "DM Sans", "Noto Sans TC", sans-serif;
@@ -37,37 +37,43 @@
     a { color: inherit; }
     .topbar {
       align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,.17);
-      color: white;
+      border-bottom: 1px solid rgba(23,37,34,.16);
+      color: var(--ink);
+      column-gap: 20px;
       display: flex;
       font-family: var(--mono);
       font-size: 11px;
       justify-content: space-between;
       letter-spacing: 0;
-      padding: 16px max(5vw, calc((100vw - 1160px) / 2));
+      padding: 12px max(5vw, calc((100vw - 1160px) / 2));
     }
-    .hero { background: var(--ink); color: white; position: relative; overflow: hidden; }
+    .hero { background: #e8edcf; color: var(--ink); position: relative; overflow: hidden; }
     .hero::after {
-      border: 1px solid rgba(198,229,107,.32);
+      border: 1px solid rgba(217,84,59,.25);
       border-radius: 50%;
       content: "";
-      height: 390px;
+      height: 310px;
       position: absolute;
-      right: -95px;
-      top: 76px;
-      width: 390px;
-      box-shadow: 0 0 0 42px rgba(198,229,107,.035), 0 0 0 84px rgba(198,229,107,.025);
+      right: -155px;
+      top: -105px;
+      width: 310px;
+      box-shadow: 0 0 0 36px rgba(217,84,59,.035), 0 0 0 72px rgba(217,84,59,.025);
       pointer-events: none;
     }
     .hero-inner, main, footer { margin: 0 auto; max-width: 1160px; padding-left: 24px; padding-right: 24px; }
-    .hero-inner { padding-bottom: 56px; padding-top: 55px; position: relative; z-index: 1; }
-    .eyebrow { color: var(--lime); font-family: var(--mono); font-size: 11px; text-transform: uppercase; }
-    h1 { font-family: var(--serif); font-size: clamp(42px, 6vw, 72px); line-height: 1.08; margin: 16px 0 12px; max-width: 760px; }
-    .hero p { color: #c7d1cb; font-size: 15px; margin: 0; max-width: 570px; }
-    .hero-meta { color: #a9b7af; display: flex; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; gap: 10px 25px; margin-top: 34px; }
+    .hero-inner { align-items: center; display: grid; gap: 36px; grid-template-columns: minmax(0, 1.5fr) minmax(220px, .5fr); padding-bottom: 28px; padding-top: 30px; position: relative; z-index: 1; }
+    .hero-copy { max-width: 720px; }
+    .hero-aside { border-left: 1px solid rgba(23,37,34,.24); padding: 4px 0 4px 24px; }
+    .hero-count { color: var(--orange); display: block; font: 600 68px/.95 var(--serif); }
+    .hero-aside-label { display: block; font-size: 12px; font-weight: 600; margin-top: 8px; }
+    .eyebrow { color: var(--orange); font-family: var(--mono); font-size: 11px; text-transform: uppercase; }
+    h1 { font-family: var(--serif); font-size: clamp(38px, 4.4vw, 56px); line-height: 1.05; margin: 11px 0 9px; max-width: 760px; }
+    .hero p { color: #52615a; font-size: 14px; margin: 0; max-width: 570px; }
+    .hero-meta { color: #52615a; display: grid; font-family: var(--mono); font-size: 10px; gap: 7px; margin-top: 13px; }
     main { padding-bottom: 58px; }
     .metrics {
-      background: var(--lime);
+      background: var(--orange);
+      color: white;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       margin-top: -1px;
@@ -75,11 +81,11 @@
       position: relative;
       z-index: 2;
     }
-    .metric { border-right: 1px solid rgba(23,37,34,.2); padding: 1px 22px; }
+    .metric { border-right: 1px solid rgba(255,255,255,.3); padding: 1px 22px; }
     .metric:first-child { padding-left: 0; }
     .metric:last-child { border: 0; }
-    .metric-label { display: block; font-size: 11px; font-weight: 600; }
-    .metric-value { display: block; font-family: var(--serif); font-size: 27px; line-height: 1.35; margin-top: 2px; }
+    .metric-label { color: rgba(255,255,255,.83); display: block; font-size: 10px; font-weight: 600; }
+    .metric-value { color: white; display: block; font-family: var(--serif); font-size: 25px; line-height: 1.3; margin-top: 2px; }
     section { margin-top: 54px; }
     .section-head { align-items: end; border-bottom: 1px solid var(--line); display: flex; gap: 20px; justify-content: space-between; margin-bottom: 19px; padding-bottom: 12px; }
     .section-index { color: var(--orange); font-family: var(--mono); font-size: 11px; }
@@ -107,8 +113,8 @@
     .model-switch { display: grid; gap: 8px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .model-choice { background: white; border: 1px solid var(--line); color: var(--ink); cursor: pointer; font: 600 12px var(--mono); min-height: 46px; }
     .model-choice[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--lime); }
-    .model-summary { align-items: center; background: var(--green); color: white; display: grid; gap: 18px; grid-template-columns: .65fr 1.5fr .7fr .7fr; margin-top: 10px; padding: 18px 20px; }
-    .model-summary small { color: #c1d6ca; display: block; font: 10px var(--mono); }
+    .model-summary { align-items: center; background: var(--ink); color: white; display: grid; gap: 18px; grid-template-columns: .65fr 1.5fr .7fr .7fr; margin-top: 10px; padding: 18px 20px; }
+    .model-summary small { color: #b8c8bd; display: block; font: 10px var(--mono); }
     .model-summary strong { display: block; font-size: 13px; margin-top: 3px; }
     .model-summary .summary-number { color: var(--lime); font: 600 21px var(--serif); }
     .analysis-grid { display: grid; gap: 28px; grid-template-columns: 1fr 1fr; }
@@ -135,12 +141,18 @@
     footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; padding-bottom: 30px; padding-top: 18px; }
     .error { background: #fff1ec; border-left: 3px solid var(--orange); color: #7b3323; padding: 12px 15px; }
     @media (max-width: 720px) {
-      .hero-inner { padding-bottom: 40px; padding-top: 39px; }
-      .hero::after { height: 230px; right: -150px; top: 140px; width: 230px; }
-      .metrics { grid-template-columns: 1fr; padding: 10px 19px; }
-      .metric, .metric:first-child { border-bottom: 1px solid rgba(23,37,34,.2); border-right: 0; padding: 10px 0; }
-      .metric:last-child { border-bottom: 0; }
-      .metric-value { font-size: 24px; }
+      .hero-inner { gap: 13px; grid-template-columns: minmax(0, 1fr) 90px; padding-bottom: 18px; padding-top: 21px; }
+      .hero-aside { align-self: end; border-left: 0; padding: 0; }
+      .hero-count { font-size: 48px; }
+      .hero-aside-label { font-size: 10px; line-height: 1.3; }
+      .hero-meta { font-size: 9px; gap: 5px; }
+      .hero-copy h1 { font-size: clamp(32px, 9vw, 42px); }
+      .hero-copy p { font-size: 12px; line-height: 1.5; }
+      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 12px 13px; }
+      .metric, .metric:first-child { border-bottom: 0; border-right: 1px solid rgba(255,255,255,.3); padding: 3px 8px; }
+      .metric:last-child { border-right: 0; }
+      .metric-label { font-size: 9px; }
+      .metric-value { font-size: 19px; }
       .chart-grid, .diagnostics, .method-grid { grid-template-columns: 1fr; }
       .model-switch { grid-template-columns: repeat(5, minmax(48px, 1fr)); overflow-x: auto; }
       .model-summary { grid-template-columns: 1fr 1fr; }
@@ -163,17 +175,23 @@
   <header class="hero">
     <nav class="topbar"><span>FIELD NOTES / 50 STARTUPS</span><span>REGRESSION STUDY · 01</span></nav>
     <div class="hero-inner">
-      <span class="eyebrow">資料研究室　/　模型選擇</span>
-      <h1>新創支出，如何<br>映照獲利？</h1>
-      <p>以多元線性迴歸與遞迴特徵消除，觀察研發、行政、行銷投入及所在地與獲利之間的關係。</p>
-      <div class="hero-meta"><span>50 筆觀測</span><span>80 / 20 訓練測試切分</span><span>RFE × Linear Regression</span></div>
+      <div class="hero-copy">
+        <span class="eyebrow">MODEL FIELDNOTE　/　01</span>
+        <h1>50 Startups<br>獲利研究</h1>
+        <p>多元線性迴歸與 RFE 特徵選擇，追蹤投入組合如何映照新創獲利。</p>
+      </div>
+      <aside class="hero-aside" aria-label="資料集摘要">
+        <span class="hero-count">50</span>
+        <span class="hero-aside-label">STARTUP RECORDS</span>
+        <div class="hero-meta"><span>80 / 20 訓練測試切分</span><span>5 個候選特徵</span><span>RFE × Linear Regression</span></div>
+      </aside>
     </div>
   </header>
   <main>
     <div class="metrics" aria-label="最佳模型摘要">
-      <div class="metric"><span class="metric-label">最低測試 RMSE</span><span class="metric-value" id="best-rmse">載入中</span></div>
+      <div class="metric"><span class="metric-label">最低 RMSE</span><span class="metric-value" id="best-rmse">載入中</span></div>
       <div class="metric"><span class="metric-label">最佳特徵數</span><span class="metric-value" id="best-count">載入中</span></div>
-      <div class="metric"><span class="metric-label">對應測試 R²</span><span class="metric-value" id="best-r2">載入中</span></div>
+      <div class="metric"><span class="metric-label">測試 R²</span><span class="metric-value" id="best-r2">載入中</span></div>
     </div>
 
     <section>
