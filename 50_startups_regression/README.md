@@ -11,6 +11,7 @@
 │   ├── feature_selection.png
 │   ├── train_test_rmse.png
 │   ├── feature_selection_results.csv
+│   ├── method_comparison_results.csv
 │   └── model_details.json
 ├── index.html
 ├── main.py
@@ -28,7 +29,7 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-程式會在資料不存在時下載 CSV 至 `data/`，並在 `outputs/` 產生兩張圖、完整指標 CSV，以及供儀表板互動預測和殘差診斷使用的模型明細 JSON。若要在瀏覽器預覽分析頁，請從此資料夾啟動靜態伺服器：
+程式會在資料不存在時下載 CSV 至 `data/`，並在 `outputs/` 產生兩張圖、RFE 指標 CSV、五種方法比較 CSV，以及供儀表板互動預測和殘差診斷使用的模型明細 JSON。若要在瀏覽器預覽分析頁，請從此資料夾啟動靜態伺服器：
 
 ```bash
 python -m http.server 8000
@@ -41,7 +42,8 @@ python -m http.server 8000
 1. 使用 pandas 讀取資料，檢查資料型態、缺失值、統計摘要及 State 分布。
 2. 以 `test_size=0.2`、`random_state=42` 切分訓練集與測試集。
 3. One-Hot Encoder 僅在訓練集 fit。為避免完全共線性，`drop="first"` 以 California 為基準，產生 `State_Florida` 與 `State_New York` 兩個 dummy variables；模型候選特徵共五個。
-4. 標準化器只 fit 訓練集，將候選特徵轉為相近尺度後供 RFE 比較係數，避免金額欄位因量尺較大而主導特徵排名；RFE 僅根據訓練集選出 1 至 5 個特徵，再以原始單位欄位訓練模型，並以相同測試集計算評估指標。
+4. 比較 RFE、Lasso L1 排名、Forward SFS、Elastic Net 與 Exhaustive Search，在每個外層 fold 內只用該 fold 的訓練資料選特徵，使用巢狀 5-fold CV 估計 1 至 5 個特徵的泛化表現。
+5. 以原始 40 筆訓練集重新選出最終特徵，訓練線性模型，最後只對固定的 10 筆 holdout 測試集評估一次；RFE 的 MSE、RMSE、MAE、R² 保留於 `feature_selection_results.csv`，五種方法的 CV 與測試分數放在 `method_comparison_results.csv`。
 
 所有特徵都是數值型態；不含需要從資料估計的補值、縮放或其他全資料 fit 步驟。資料若出現缺失值，程式會明確停止，避免默默採用不合適的補值方式。
 
@@ -54,8 +56,8 @@ python -m http.server 8000
 
 ## Overfitting 與 Underfitting
 
-`outputs/train_test_rmse.png` 並列訓練及測試 RMSE。兩者都高可能表示欠擬合；訓練 RMSE 低很多、測試 RMSE 卻高，可能表示過度擬合或小樣本切分波動。本資料只有 50 筆，應把差距視為診斷線索，不宜只依單次切分下定論。
+`outputs/feature_selection.png` 顯示五種方法的訓練集外層 5-fold CV 平均 RMSE 與 R²；RMSE 圖使用縮放 y 軸呈現相近模型的差異，CV RMSE 標準差在比較表中另列。`outputs/train_test_rmse.png` 保留 RFE 訓練／holdout RMSE。兩者都高可能表示欠擬合；訓練 RMSE 低很多、測試 RMSE 卻高，可能表示過度擬合或小樣本切分波動。本資料只有 50 筆，應把差距視為診斷線索，不宜只依單次切分下定論。
 
 ## GitHub Pages
 
-工作區根目錄的 `.github/workflows/deploy-pages.yml` 會將本資料夾發布為靜態網站。把整個工作區推送到 GitHub 後，在 repository 的 **Settings → Pages → Build and deployment** 選擇 **GitHub Actions**；Actions 成功後，Pages 網址會是 `https://<使用者名稱>.github.io/<repository 名稱>/`。本環境沒有你的 GitHub 帳號授權，因此無法代替你建立遠端 repository 或推送；程式碼與部署流程已備妥。
+工作區根目錄的 `.github/workflows/deploy-pages.yml` 會將本資料夾發布為靜態網站。Repository 的 **Settings → Pages → Build and deployment** 需將 Source 設為 **GitHub Actions**；後續推送至 `main` 會自動重新部署。此專案目前部署網址為 `https://yuan0307212-ops.github.io/DIC-2-kaggle-50-startup/`。

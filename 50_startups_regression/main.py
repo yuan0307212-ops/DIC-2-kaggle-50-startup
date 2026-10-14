@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from itertools import combinations
 from pathlib import Path
 
 import matplotlib
@@ -13,10 +14,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
-from sklearn.feature_selection import RFE
-from sklearn.linear_model import LinearRegression
+from sklearn.feature_selection import RFE, SequentialFeatureSelector
+from sklearn.linear_model import ElasticNetCV, LassoCV, LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
@@ -30,6 +31,13 @@ DATA_URL = (
     "faf8b1a0d58e251f48a647d3881e7a960c3f0925/50_Startups.csv"
 )
 NUMERIC_COLUMNS = ["R&D Spend", "Administration", "Marketing Spend"]
+SELECTION_METHODS = {
+    "RFE": "RFE",
+    "Lasso": "Lasso L1 排名",
+    "Forward SFS": "Forward SFS",
+    "Elastic Net": "Elastic Net",
+    "Exhaustive Search": "Exhaustive Search",
+}
 
 
 def download_data() -> None:
@@ -124,118 +132,214 @@ def calculate_metrics(actual: pd.Series, predicted: np.ndarray) -> dict[str, flo
     }
 
 
+def select_features(
+    method: str,
+    X_fit: pd.DataFrame,
+    y_fit: pd.Series,
+    feature_count: int,
+) -> list[str]:
+    """只根據傳入訓練 fold 選特徵，內層 CV 不接觸外層驗證 fold。"""
+    feature_names = X_fit.columns.tolist()
+    if feature_count == len(feature_names):
+        return feature_names
+
+    inner_cv = KFold(n_splits=min(4, len(X_fit)), shuffle=True, random_state=42)
+    if method == "RFE":
+        scaler = StandardScaler().fit(X_fit)
+        selector = RFE(
+            estimator=LinearRegression(), n_features_to_select=feature_count
+        ).fit(scaler.transform(X_fit), y_fit)
+        return [name for name, keep in zip(feature_names, selector.support_) if keep]
+
+    if method in {"Lasso", "Elastic Net"}:
+        scaler = StandardScaler().fit(X_fit)
+        X_scaled = scaler.transform(X_fit)
+        if method == "Lasso":
+            selector = LassoCV(cv=inner_cv, max_iter=50000, random_state=42).fit(
+                X_scaled, y_fit
+            )
+        else:
+            selector = ElasticNetCV(
+                l1_ratio=[0.2, 0.5, 0.8, 0.95],
+                cv=inner_cv,
+                max_iter=50000,
+            ).fit(X_scaled, y_fit)
+        ranked_indices = np.argsort(np.abs(selector.coef_))[::-1][:feature_count]
+        selected_set = {feature_names[index] for index in ranked_indices}
+        return [name for name in feature_names if name in selected_set]
+
+    if method == "Forward SFS":
+        selector = SequentialFeatureSelector(
+            LinearRegression(),
+            n_features_to_select=feature_count,
+            direction="forward",
+            scoring="neg_root_mean_squared_error",
+            cv=inner_cv,
+        ).fit(X_fit, y_fit)
+        return [name for name, keep in zip(feature_names, selector.support_) if keep]
+
+    if method == "Exhaustive Search":
+        best_score = -np.inf
+        best_features: tuple[str, ...] | None = None
+        for candidate in combinations(feature_names, feature_count):
+            score = cross_val_score(
+                LinearRegression(),
+                X_fit[list(candidate)],
+                y_fit,
+                scoring="neg_root_mean_squared_error",
+                cv=inner_cv,
+            ).mean()
+            if score > best_score:
+                best_score = score
+                best_features = candidate
+        if best_features is None:
+            raise RuntimeError("Exhaustive Search 找不到有效特徵組合。")
+        return list(best_features)
+
+    raise ValueError(f"不支援的特徵選擇方法：{method}")
+
+
 def evaluate_feature_counts(
     X_train: pd.DataFrame,
     X_test: pd.DataFrame,
     y_train: pd.Series,
     y_test: pd.Series,
     feature_names: list[str],
-) -> tuple[pd.DataFrame, dict[str, list[dict[str, object]]]]:
-    """僅在訓練資料執行 RFE，對固定測試集比較 1 至 5 個特徵。"""
+) -> tuple[
+    pd.DataFrame,
+    dict[str, list[dict[str, object]]],
+    pd.DataFrame,
+]:
+    """巢狀 CV 比較選擇器；外層測試集只用於最終一次評估。"""
     if len(feature_names) < 5:
-        raise ValueError(f"RFE 需要至少 5 個候選特徵，目前只有 {len(feature_names)}。")
+        raise ValueError(f"需要至少 5 個候選特徵，目前只有 {len(feature_names)}。")
 
-    selection_scaler = StandardScaler().fit(X_train)
-    X_train_scaled = selection_scaler.transform(X_train)
-    rows = []
+    comparison_rows = []
     model_details = []
-    for feature_count in range(1, 6):
-        selector = RFE(
-            estimator=LinearRegression(), n_features_to_select=feature_count
-        )
-        selector.fit(X_train_scaled, y_train)
-        selected = [
-            name for name, keep in zip(feature_names, selector.support_) if keep
-        ]
-        model = LinearRegression().fit(X_train[selected], y_train)
-        train_metrics = calculate_metrics(y_train, model.predict(X_train[selected]))
-        test_predictions = model.predict(X_test[selected])
-        test_metrics = calculate_metrics(y_test, test_predictions)
+    outer_cv = KFold(n_splits=5, shuffle=True, random_state=42)
+    for method, method_label in SELECTION_METHODS.items():
+        for feature_count in range(1, 6):
+            fold_rmse = []
+            fold_r2 = []
+            for fit_indices, validation_indices in outer_cv.split(X_train):
+                X_fit = X_train.iloc[fit_indices]
+                X_validation = X_train.iloc[validation_indices]
+                y_fit = y_train.iloc[fit_indices]
+                y_validation = y_train.iloc[validation_indices]
+                fold_features = select_features(method, X_fit, y_fit, feature_count)
+                fold_model = LinearRegression().fit(X_fit[fold_features], y_fit)
+                fold_prediction = fold_model.predict(X_validation[fold_features])
+                fold_metrics = calculate_metrics(y_validation, fold_prediction)
+                fold_rmse.append(fold_metrics["RMSE"])
+                fold_r2.append(fold_metrics["R-squared"])
 
-        rows.append(
-            {
-                "Number of Features": feature_count,
-                "Selected Features": selected,
-                "Train MSE": train_metrics["MSE"],
-                "Train RMSE": train_metrics["RMSE"],
-                "Train MAE": train_metrics["MAE"],
-                "Train R-squared": train_metrics["R-squared"],
-                "Test MSE": test_metrics["MSE"],
-                "Test RMSE": test_metrics["RMSE"],
-                "Test MAE": test_metrics["MAE"],
-                "Test R-squared": test_metrics["R-squared"],
-            }
-        )
-        model_details.append(
-            {
-                "number_of_features": feature_count,
-                "selected_features": selected,
-                "intercept": float(model.intercept_),
-                "coefficients": {
-                    name: float(coefficient)
-                    for name, coefficient in zip(selected, model.coef_)
-                },
-                "test_rmse": test_metrics["RMSE"],
-                "test_r_squared": test_metrics["R-squared"],
-                "test_cases": [
+            selected = select_features(method, X_train, y_train, feature_count)
+            model = LinearRegression().fit(X_train[selected], y_train)
+            train_metrics = calculate_metrics(y_train, model.predict(X_train[selected]))
+            test_predictions = model.predict(X_test[selected])
+            test_metrics = calculate_metrics(y_test, test_predictions)
+            comparison_rows.append(
+                {
+                    "Method": method,
+                    "Method Label": method_label,
+                    "Number of Features": feature_count,
+                    "Selected Features": selected,
+                    "CV RMSE": float(np.mean(fold_rmse)),
+                    "CV RMSE Std": float(np.std(fold_rmse, ddof=1)),
+                    "CV R-squared": float(np.mean(fold_r2)),
+                    "Train RMSE": train_metrics["RMSE"],
+                    "Test MSE": test_metrics["MSE"],
+                    "Test RMSE": test_metrics["RMSE"],
+                    "Test MAE": test_metrics["MAE"],
+                    "Test R-squared": test_metrics["R-squared"],
+                }
+            )
+
+            if method == "RFE":
+                model_details.append(
                     {
-                        "case": index + 1,
-                        "actual": float(actual),
-                        "predicted": float(predicted),
-                        "residual": float(actual - predicted),
+                        "number_of_features": feature_count,
+                        "selected_features": selected,
+                        "intercept": float(model.intercept_),
+                        "coefficients": {
+                            name: float(coefficient)
+                            for name, coefficient in zip(selected, model.coef_)
+                        },
+                        "test_rmse": test_metrics["RMSE"],
+                        "test_r_squared": test_metrics["R-squared"],
+                        "test_cases": [
+                            {
+                                "case": index + 1,
+                                "actual": float(actual),
+                                "predicted": float(predicted),
+                                "residual": float(actual - predicted),
+                            }
+                            for index, (actual, predicted) in enumerate(
+                                zip(y_test, test_predictions)
+                            )
+                        ],
                     }
-                    for index, (actual, predicted) in enumerate(
-                        zip(y_test, test_predictions)
-                    )
-                ],
-            }
-        )
-        print(
-            f"\n特徵數 {feature_count}：{selected}\n"
-            f"  訓練 RMSE={train_metrics['RMSE']:,.2f}，"
-            f"測試 RMSE={test_metrics['RMSE']:,.2f}，"
-            f"測試 R²={test_metrics['R-squared']:.4f}，"
-            f"測試 MAE={test_metrics['MAE']:,.2f}"
-        )
+                )
+            print(
+                f"{method_label} | k={feature_count} | "
+                f"CV RMSE={np.mean(fold_rmse):,.2f} ± {np.std(fold_rmse, ddof=1):,.2f} | "
+                f"Test RMSE={test_metrics['RMSE']:,.2f}"
+            )
 
-    return pd.DataFrame(rows), {"models": model_details}
+    comparison = pd.DataFrame(comparison_rows)
+    rfe_results = comparison.loc[comparison["Method"] == "RFE"].copy()
+    return rfe_results, {"models": model_details}, comparison
 
 
-def plot_feature_selection(results: pd.DataFrame) -> None:
-    feature_counts = results["Number of Features"]
+def plot_feature_selection(comparison: pd.DataFrame) -> None:
+    colors = {
+        "RFE": "#2563eb",
+        "Lasso": "#e76f51",
+        "Forward SFS": "#16866d",
+        "Elastic Net": "#b04b83",
+        "Exhaustive Search": "#c18115",
+    }
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.8))
-    fig.patch.set_facecolor("#f7f7f2")
+    fig.patch.set_facecolor("#f4f5ef")
     for axis in axes:
         axis.set_facecolor("#ffffff")
         axis.spines[["top", "right"]].set_visible(False)
         axis.grid(axis="y", color="#e4e8e5", linewidth=0.8)
-        axis.set_xticks(feature_counts)
+        axis.set_xticks(range(1, 6))
         axis.set_xlabel("Number of Features")
 
-    axes[0].plot(
-        feature_counts,
-        results["Test RMSE"],
-        color="#2563eb",
-        linewidth=2.5,
-        marker="o",
-        markersize=8,
-    )
-    axes[0].set_title("RMSE by Number of Features", loc="left", weight="bold")
-    axes[0].set_ylabel("RMSE")
+    for method, group in comparison.groupby("Method", sort=False):
+        group = group.sort_values("Number of Features")
+        axes[0].plot(
+            group["Number of Features"],
+            group["CV RMSE"],
+            color=colors[method],
+            linewidth=2,
+            marker="o",
+            markersize=6,
+            label=method,
+        )
+        axes[1].plot(
+            group["Number of Features"],
+            group["CV R-squared"],
+            color=colors[method],
+            linewidth=2,
+            marker="o",
+            markersize=6,
+            label=method,
+        )
 
-    axes[1].plot(
-        feature_counts,
-        results["Test R-squared"],
-        color="#2563eb",
-        linewidth=2.5,
-        marker="o",
-        markersize=8,
-    )
-    axes[1].set_title("R-squared by Number of Features", loc="left", weight="bold")
-    axes[1].set_ylabel("R-squared")
-    axes[1].set_ylim(min(-0.05, results["Test R-squared"].min() - 0.08), 1.05)
+    axes[0].set_title("5-Fold CV RMSE by Number of Features", loc="left", weight="bold")
+    axes[0].set_ylabel("Mean CV RMSE (USD; zoomed axis)")
+    axes[0].set_ylim(8800, 9900)
+    axes[1].set_title("5-Fold CV R-squared by Number of Features", loc="left", weight="bold")
+    axes[1].set_ylabel("Mean CV R-squared (zoomed axis)")
+    axes[1].set_ylim(0.92, 0.95)
+    axes[1].axhline(0, color="#89958e", linewidth=0.8)
+    axes[1].legend(frameon=False, fontsize=8, loc="best")
+    axes[0].legend(frameon=False, fontsize=8, loc="best")
 
-    fig.suptitle("50 Startups / RFE feature selection", x=0.08, ha="left", weight="bold")
+    fig.suptitle("Feature selection comparison / nested CV on training data", x=0.08, ha="left", weight="bold")
     fig.tight_layout()
     fig.savefig(OUTPUT_DIR / "feature_selection.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
@@ -305,7 +409,7 @@ def main() -> None:
     download_data()
     data = load_and_explore()
     X_train, X_test, y_train, y_test, feature_names = preprocess(data)
-    results, model_details = evaluate_feature_counts(
+    results, model_details, comparison = evaluate_feature_counts(
         X_train, X_test, y_train, y_test, feature_names
     )
 
@@ -315,9 +419,15 @@ def main() -> None:
         encoding="utf-8-sig",
         float_format="%.8f",
     )
+    comparison.to_csv(
+        OUTPUT_DIR / "method_comparison_results.csv",
+        index=False,
+        encoding="utf-8-sig",
+        float_format="%.8f",
+    )
     with (OUTPUT_DIR / "model_details.json").open("w", encoding="utf-8") as output_file:
         json.dump(model_details, output_file, ensure_ascii=False, indent=2)
-    plot_feature_selection(results)
+    plot_feature_selection(comparison)
     plot_train_test_rmse(results)
     print_overfit_notes(results)
 

@@ -138,6 +138,11 @@
     .residual-zero { stroke: #738079; stroke-dasharray: 5 5; stroke-width: 1.5; }
     .residual-axis { fill: var(--muted); font: 10px var(--mono); }
     .selected-row { background: #edf3e7; }
+    .comparison-controls { align-items: center; display: flex; gap: 12px; justify-content: flex-end; }
+    .comparison-controls label { color: var(--muted); font-size: 11px; }
+    .comparison-controls select { background: white; border: 1px solid var(--line); color: var(--ink); font: 12px var(--sans); min-height: 38px; padding: 6px 30px 6px 10px; }
+    .comparison-table { min-width: 850px; }
+    .cv-note { background: #e8edcf; color: #435149; font-size: 12px; margin-top: 12px; padding: 12px 15px; }
     footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; padding-bottom: 30px; padding-top: 18px; }
     .error { background: #fff1ec; border-left: 3px solid var(--orange); color: #7b3323; padding: 12px 15px; }
     @media (max-width: 720px) {
@@ -178,20 +183,20 @@
       <div class="hero-copy">
         <span class="eyebrow">MODEL FIELDNOTE　/　01</span>
         <h1>50 Startups<br>獲利研究</h1>
-        <p>多元線性迴歸與 RFE 特徵選擇，追蹤投入組合如何映照新創獲利。</p>
+        <p>五種特徵選擇策略與多元線性迴歸，檢視投入組合如何映照新創獲利。</p>
       </div>
       <aside class="hero-aside" aria-label="資料集摘要">
         <span class="hero-count">50</span>
         <span class="hero-aside-label">STARTUP RECORDS</span>
-        <div class="hero-meta"><span>80 / 20 訓練測試切分</span><span>5 個候選特徵</span><span>RFE × Linear Regression</span></div>
+        <div class="hero-meta"><span>80 / 20 訓練測試切分</span><span>5 個選擇方法 × 5 種特徵數</span><span>Nested 5-Fold CV</span></div>
       </aside>
     </div>
   </header>
   <main>
     <div class="metrics" aria-label="最佳模型摘要">
-      <div class="metric"><span class="metric-label">最低 RMSE</span><span class="metric-value" id="best-rmse">載入中</span></div>
-      <div class="metric"><span class="metric-label">最佳特徵數</span><span class="metric-value" id="best-count">載入中</span></div>
-      <div class="metric"><span class="metric-label">測試 R²</span><span class="metric-value" id="best-r2">載入中</span></div>
+      <div class="metric"><span class="metric-label">RFE 最低測試 RMSE</span><span class="metric-value" id="best-rmse">載入中</span></div>
+      <div class="metric"><span class="metric-label">RFE 最佳特徵數</span><span class="metric-value" id="best-count">載入中</span></div>
+      <div class="metric"><span class="metric-label">RFE 測試 R²</span><span class="metric-value" id="best-r2">載入中</span></div>
     </div>
 
     <section>
@@ -227,14 +232,21 @@
     </section>
 
     <section>
-      <div class="section-head"><div><span class="section-index">03 / MODEL PERFORMANCE</span><h2>特徵數與預測力</h2></div><p class="section-note">同一測試集 · 藍線標記各特徵數結果</p></div>
+      <div class="section-head"><div><span class="section-index">03 / CROSS-VALIDATED PERFORMANCE</span><h2>特徵數與泛化能力</h2></div><p class="section-note">訓練集外層 5-fold CV 平均 · SD 詳見比較表</p></div>
       <div class="chart-grid">
-        <figure><img src="outputs/feature_selection.png" alt="左圖為測試集 RMSE、右圖為 R-squared 隨特徵數變化的並排折線圖"></figure>
+        <figure><img src="outputs/feature_selection.png" alt="五種特徵選擇方法在訓練集巢狀五折交叉驗證的 RMSE 和 R-squared 比較圖"></figure>
       </div>
     </section>
 
     <section>
-      <div class="section-head"><div><span class="section-index">04 / TEST SET SCORECARD</span><h2>特徵選擇結果</h2></div><p class="section-note">RFE 僅於訓練資料 fit；最佳列依測試 RMSE 標示</p></div>
+      <div class="section-head"><div><span class="section-index">04 / SELECTOR SCORECARD</span><h2>五種選擇方法比較</h2></div><div class="comparison-controls"><label for="method-filter">選擇方法</label><select id="method-filter" aria-label="篩選特徵選擇方法"><option value="all">全部方法</option></select></div></div>
+      <div class="table-wrap"><table class="comparison-table"><thead><tr><th>方法</th><th>特徵數</th><th>選入特徵</th><th>CV RMSE 平均 ± SD</th><th>測試 RMSE</th><th>測試 R²</th></tr></thead><tbody id="method-results"><tr><td colspan="6">正在讀取方法比較結果…</td></tr></tbody></table></div>
+      <div class="cv-note" id="cv-insight">正在整理交叉驗證與 holdout 結果…</div>
+      <div class="cv-note">模型選擇與交叉驗證只使用 40 筆訓練資料；10 筆 holdout 測試集只作最後評估。外層 5-fold 估計泛化表現，內層 CV 負責特徵或正則化選擇。小樣本下各折分數波動大，請同時查看標準差。</div>
+    </section>
+
+    <section>
+      <div class="section-head"><div><span class="section-index">05 / RFE HOLDOUT SCORECARD</span><h2>RFE 測試集結果</h2></div><p class="section-note">保留原始 RFE 分析 · 同一 holdout 測試集</p></div>
       <div class="table-wrap"><table>
         <thead><tr><th>特徵數</th><th>選入特徵</th><th>MSE</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead>
         <tbody id="results"><tr><td colspan="6">正在讀取模型結果…</td></tr></tbody>
@@ -242,7 +254,7 @@
     </section>
 
     <section>
-      <div class="section-head"><div><span class="section-index">05 / GENERALIZATION CHECK</span><h2>訓練與測試的落差</h2></div><p class="section-note">誤差落差可提示泛化風險，不代表因果關係</p></div>
+      <div class="section-head"><div><span class="section-index">06 / GENERALIZATION CHECK</span><h2>訓練與測試的落差</h2></div><p class="section-note">誤差落差可提示泛化風險，不代表因果關係</p></div>
       <div class="diagnostics">
         <figure><img src="outputs/train_test_rmse.png" alt="比較不同特徵數的 Training RMSE 和 Testing RMSE"></figure>
         <div><span class="eyebrow" style="color:var(--green)">讀圖提示</span><p id="diagnosis">Training 與 Testing RMSE 越接近，通常代表這次切分下的泛化落差較小；兩者都高則可能欠擬合。只有 50 筆資料，判讀仍需保守。</p></div>
@@ -250,7 +262,7 @@
     </section>
 
     <section>
-      <div class="section-head"><div><span class="section-index">06 / TEST RESIDUALS</span><h2>測試集殘差與離群點</h2></div><p class="section-note">以目前選定模型計算 · 殘差 = 實際獲利 − 預測獲利</p></div>
+      <div class="section-head"><div><span class="section-index">07 / TEST RESIDUALS</span><h2>測試集殘差與離群點</h2></div><p class="section-note">以目前選定模型計算 · 殘差 = 實際獲利 − 預測獲利</p></div>
       <div class="residual-layout">
         <div class="residual-plot"><svg id="residual-chart" viewBox="0 0 900 220" role="img" aria-label="測試集殘差散佈圖"></svg></div>
         <div class="table-wrap"><table class="residual-table"><thead><tr><th>測試樣本</th><th>實際獲利</th><th>預測獲利</th><th>殘差</th></tr></thead><tbody id="residuals"></tbody></table></div>
@@ -258,14 +270,19 @@
     </section>
 
     <section>
-      <div class="section-head"><div><span class="section-index">04 / 方法與指標</span><h2>怎麼讀這份分析</h2></div></div>
+      <div class="section-head"><div><span class="section-index">08 / 方法與指標</span><h2>怎麼讀這份分析</h2></div></div>
       <div class="method-grid">
+        <div class="method"><strong>RFE</strong><p>反覆移除標準化後係數較小的特徵，再比較指定特徵數。</p></div>
+        <div class="method"><strong>Lasso L1</strong><p>以交叉驗證選擇正則化強度，再按標準化係數絕對值排序。</p></div>
+        <div class="method"><strong>Forward SFS</strong><p>逐步加入能改善內層交叉驗證 RMSE 的特徵。</p></div>
+        <div class="method"><strong>Elastic Net</strong><p>結合 L1 與 L2 正則化，按交叉驗證係數排名。</p></div>
+        <div class="method"><strong>Exhaustive Search</strong><p>枚舉固定特徵數的所有組合，以內層 CV RMSE 選最佳子集。</p></div>
         <div class="method"><strong>MSE / 均方誤差</strong><p>預測誤差平方的平均；越低越好，大誤差會被放大。</p></div>
         <div class="method"><strong>RMSE / 均方根誤差</strong><p>MSE 開平方，與獲利同單位；數值越低越好。</p></div>
         <div class="method"><strong>MAE / 平均絕對誤差</strong><p>預測誤差絕對值的平均；越低越好，較少放大離群誤差。</p></div>
         <div class="method"><strong>R² / 決定係數</strong><p>相對於平均值基準所解釋的變異；越接近 1 通常越好，也可能小於 0。</p></div>
         <div class="method"><strong>State / 地區編碼</strong><p>California 作為基準類別；展開為 State_Florida 與 State_New York。</p></div>
-        <div class="method"><strong>驗證方式</strong><p>random_state=42 固定切分；編碼器只在訓練集 fit，避免測試資料洩漏。</p></div>
+        <div class="method"><strong>Nested CV</strong><p>訓練集外層 5-fold 評估、內層 CV 選特徵；holdout 測試集不參與調參。</p></div>
       </div>
     </section>
   </main>
@@ -303,6 +320,7 @@
       "State_New York": "紐約州"
     };
     let modelRecords = [];
+    let comparisonRecords = [];
     let activeModel = null;
 
     function updatePrediction() {
@@ -414,17 +432,42 @@
       renderResiduals(activeModel);
     }
 
+    function renderMethodComparison() {
+      const selectedMethod = document.querySelector("#method-filter").value;
+      const visibleRecords = selectedMethod === "all"
+        ? comparisonRecords
+        : comparisonRecords.filter(record => record.Method === selectedMethod);
+      const bestCv = comparisonRecords.reduce((best, record) => Number(record["CV RMSE"]) < Number(best["CV RMSE"]) ? record : best);
+      const body = document.querySelector("#method-results");
+      body.replaceChildren();
+      visibleRecords.forEach(record => {
+        const isBest = record.Method === bestCv.Method && record["Number of Features"] === bestCv["Number of Features"];
+        addTableRow(body, [
+          record["Method Label"],
+          record["Number of Features"],
+          features(record["Selected Features"]).map(name => featureLabels[name] || name).join("、"),
+          `${number(record["CV RMSE"])} ± ${number(record["CV RMSE Std"])}`,
+          number(record["Test RMSE"]),
+          number(record["Test R-squared"], 4)
+        ], isBest ? "best-row" : "");
+      });
+    }
+
     async function loadResults() {
       const body = document.querySelector("#results");
       try {
-        const [csvResponse, modelResponse] = await Promise.all([
+        const [csvResponse, modelResponse, comparisonResponse] = await Promise.all([
           fetch("outputs/feature_selection_results.csv", { cache: "no-store" }),
-          fetch("outputs/model_details.json", { cache: "no-store" })
+          fetch("outputs/model_details.json", { cache: "no-store" }),
+          fetch("outputs/method_comparison_results.csv", { cache: "no-store" })
         ]);
-        if (!csvResponse.ok || !modelResponse.ok) throw new Error("找不到分析結果，請先執行 python main.py。");
-        const [csvText, modelData] = await Promise.all([csvResponse.text(), modelResponse.json()]);
+        if (!csvResponse.ok || !modelResponse.ok || !comparisonResponse.ok) throw new Error("找不到分析結果，請先執行 python main.py。");
+        const [csvText, modelData, comparisonText] = await Promise.all([
+          csvResponse.text(), modelResponse.json(), comparisonResponse.text()
+        ]);
         const records = parseCSV(csvText);
         modelRecords = modelData.models;
+        comparisonRecords = parseCSV(comparisonText);
         const best = records.reduce((current, item) => Number(item["Test RMSE"]) < Number(current["Test RMSE"]) ? item : current);
         document.querySelector("#best-rmse").textContent = number(best["Test RMSE"]);
         document.querySelector("#best-count").textContent = `${best["Number of Features"]} 個`;
@@ -439,6 +482,18 @@
         document.querySelector("#model-switch").innerHTML = modelRecords.map(model => `<button class="model-choice" type="button" data-feature-count="${model.number_of_features}" aria-pressed="false">k = ${model.number_of_features}</button>`).join("");
         document.querySelectorAll(".model-choice").forEach(button => button.addEventListener("click", () => selectModel(Number(button.dataset.featureCount))));
         selectModel(Number(best["Number of Features"]));
+        const methodFilter = document.querySelector("#method-filter");
+        [...new Map(comparisonRecords.map(record => [record.Method, record["Method Label"]]))].forEach(([method, label]) => {
+          const option = document.createElement("option");
+          option.value = method;
+          option.textContent = label;
+          methodFilter.append(option);
+        });
+        const bestCv = comparisonRecords.reduce((best, record) => Number(record["CV RMSE"]) < Number(best["CV RMSE"]) ? record : best);
+        const bestHoldout = comparisonRecords.reduce((best, record) => Number(record["Test RMSE"]) < Number(best["Test RMSE"]) ? record : best);
+        document.querySelector("#cv-insight").textContent = `本次最低平均 CV RMSE：${bestCv["Method Label"]}、k=${bestCv["Number of Features"]}，${number(bestCv["CV RMSE"])} ± ${number(bestCv["CV RMSE Std"])}；單次 holdout 最低測試 RMSE：${bestHoldout["Method Label"]}、k=${bestHoldout["Number of Features"]}（${number(bestHoldout["Test RMSE"])}）。兩者評估資料不同；CV 標準差大，方法間差距不宜解讀為確定優劣。`;
+        methodFilter.addEventListener("change", renderMethodComparison);
+        renderMethodComparison();
       } catch (error) {
         body.innerHTML = `<tr><td colspan="6"><div class="error">${error.message} 若以 file:// 開啟，請改用 README 的本機伺服器指令。</div></td></tr>`;
         ["#best-rmse", "#best-count", "#best-r2"].forEach(selector => { document.querySelector(selector).textContent = "—"; });
