@@ -1,0 +1,394 @@
+{
+  "models": [
+    {
+      "number_of_features": 1,
+      "selected_features": [
+        "R&D Spend"
+      ],
+      "intercept": 49336.6680379911,
+      "coefficients": {
+        "R&D Spend": 0.8536091075148804
+      },
+      "test_rmse": 7714.334890830185,
+      "test_r_squared": 0.9265108109341951,
+      "test_cases": [
+        {
+          "case": 1,
+          "actual": 134307.35,
+          "predicted": 127862.2099640519,
+          "residual": 6445.140035948105
+        },
+        {
+          "case": 2,
+          "actual": 81005.76,
+          "predicted": 82250.56334619469,
+          "residual": -1244.8033461946907
+        },
+        {
+          "case": 3,
+          "actual": 99937.59,
+          "predicted": 102255.72078164021,
+          "residual": -2318.1307816402114
+        },
+        {
+          "case": 4,
+          "actual": 64926.08,
+          "predicted": 50190.47347560071,
+          "residual": 14735.606524399293
+        },
+        {
+          "case": 5,
+          "actual": 125370.37,
+          "predicted": 130136.88190548433,
+          "residual": -4766.511905484338
+        },
+        {
+          "case": 6,
+          "actual": 35673.41,
+          "predicted": 49799.36685471954,
+          "residual": -14125.956854719538
+        },
+        {
+          "case": 7,
+          "actual": 105733.54,
+          "predicted": 113638.07752879555,
+          "residual": -7904.537528795554
+        },
+        {
+          "case": 8,
+          "actual": 107404.34,
+          "predicted": 104535.05342879966,
+          "residual": 2869.2865712003404
+        },
+        {
+          "case": 9,
+          "actual": 97427.84,
+          "predicted": 103463.0484311271,
+          "residual": -6035.208431127103
+        },
+        {
+          "case": 10,
+          "actual": 122776.86,
+          "predicted": 123105.3110266948,
+          "residual": -328.4510266948055
+        }
+      ]
+    },
+    {
+      "number_of_features": 2,
+      "selected_features": [
+        "R&D Spend",
+        "Marketing Spend"
+      ],
+      "intercept": 45542.39247751425,
+      "coefficients": {
+        "R&D Spend": 0.7833743148902921,
+        "Marketing Spend": 0.03923978714553163
+      },
+      "test_rmse": 8206.328813165857,
+      "test_r_squared": 0.9168381183550246,
+      "test_cases": [
+        {
+          "case": 1,
+          "actual": 134307.35,
+          "predicted": 127521.38604122546,
+          "residual": 6785.963958774548
+        },
+        {
+          "case": 2,
+          "actual": 81005.76,
+          "predicted": 82615.07411457176,
+          "residual": -1609.3141145717673
+        },
+        {
+          "case": 3,
+          "actual": 99937.59,
+          "predicted": 97683.24623440253,
+          "residual": 2254.3437655974703
+        },
+        {
+          "case": 4,
+          "actual": 64926.08,
+          "predicted": 46400.65677643696,
+          "residual": 18525.42322356304
+        },
+        {
+          "case": 5,
+          "actual": 125370.37,
+          "predicted": 130782.53611917049,
+          "residual": -5412.166119170492
+        },
+        {
+          "case": 6,
+          "actual": 35673.41,
+          "predicted": 45967.02052490054,
+          "residual": -10293.610524900534
+        },
+        {
+          "case": 7,
+          "actual": 105733.54,
+          "predicted": 109813.19061886774,
+          "residual": -4079.650618867745
+        },
+        {
+          "case": 8,
+          "actual": 107404.34,
+          "predicted": 101612.68921418354,
+          "residual": 5791.650785816455
+        },
+        {
+          "case": 9,
+          "actual": 97427.84,
+          "predicted": 97023.6401385373,
+          "residual": 404.19986146269366
+        },
+        {
+          "case": 10,
+          "actual": 122776.86,
+          "predicted": 113241.36575803882,
+          "residual": 9535.494241961176
+        }
+      ]
+    },
+    {
+      "number_of_features": 3,
+      "selected_features": [
+        "R&D Spend",
+        "Administration",
+        "Marketing Spend"
+      ],
+      "intercept": 54071.87574599082,
+      "coefficients": {
+        "R&D Spend": 0.8037792756297524,
+        "Administration": -0.06792917400149973,
+        "Marketing Spend": 0.031241545897732932
+      },
+      "test_rmse": 8995.905803361415,
+      "test_r_squared": 0.9000653083037321,
+      "test_cases": [
+        {
+          "case": 1,
+          "actual": 134307.35,
+          "predicted": 126703.02716460759,
+          "residual": 7604.3228353924205
+        },
+        {
+          "case": 2,
+          "actual": 81005.76,
+          "predicted": 84894.75081555641,
+          "residual": -3888.990815556419
+        },
+        {
+          "case": 3,
+          "actual": 99937.59,
+          "predicted": 98893.41815973516,
+          "residual": 1044.1718402648403
+        },
+        {
+          "case": 4,
+          "actual": 64926.08,
+          "predicted": 46501.70815035989,
+          "residual": 18424.371849640112
+        },
+        {
+          "case": 5,
+          "actual": 125370.37,
+          "predicted": 129128.39734380912,
+          "residual": -3758.0273438091244
+        },
+        {
+          "case": 6,
+          "actual": 35673.41,
+          "predicted": 50992.69486261023,
+          "residual": -15319.284862610228
+        },
+        {
+          "case": 7,
+          "actual": 105733.54,
+          "predicted": 109016.55365780124,
+          "residual": -3283.013657801246
+        },
+        {
+          "case": 8,
+          "actual": 107404.34,
+          "predicted": 100878.46414540117,
+          "residual": 6525.875854598824
+        },
+        {
+          "case": 9,
+          "actual": 97427.84,
+          "predicted": 97700.59638628678,
+          "residual": -272.7563862867828
+        },
+        {
+          "case": 10,
+          "actual": 122776.86,
+          "predicted": 113106.15292225598,
+          "residual": 9670.707077744024
+        }
+      ]
+    },
+    {
+      "number_of_features": 4,
+      "selected_features": [
+        "R&D Spend",
+        "Administration",
+        "Marketing Spend",
+        "State_Florida"
+      ],
+      "intercept": 54029.88591884383,
+      "coefficients": {
+        "R&D Spend": 0.8056328218583004,
+        "Administration": -0.06878374611294388,
+        "Marketing Spend": 0.029859723528220285,
+        "State_Florida": 935.0793356301098
+      },
+      "test_rmse": 9055.95775223373,
+      "test_r_squared": 0.8987266318428203,
+      "test_cases": [
+        {
+          "case": 1,
+          "actual": 134307.35,
+          "predicted": 126366.62112467471,
+          "residual": 7940.728875325294
+        },
+        {
+          "case": 2,
+          "actual": 81005.76,
+          "predicted": 84611.49884194596,
+          "residual": -3605.7388419459603
+        },
+        {
+          "case": 3,
+          "actual": 99937.59,
+          "predicted": 99676.66630399994,
+          "residual": 260.9236960000562
+        },
+        {
+          "case": 4,
+          "actual": 64926.08,
+          "predicted": 46352.843677158075,
+          "residual": 18573.236322841927
+        },
+        {
+          "case": 5,
+          "actual": 125370.37,
+          "predicted": 128747.41218211377,
+          "residual": -3377.0421821137716
+        },
+        {
+          "case": 6,
+          "actual": 35673.41,
+          "predicted": 50907.49149724815,
+          "residual": -15234.081497248146
+        },
+        {
+          "case": 7,
+          "actual": 105733.54,
+          "predicted": 109740.86073504922,
+          "residual": -4007.3207350492303
+        },
+        {
+          "case": 8,
+          "actual": 107404.34,
+          "predicted": 100646.43527452237,
+          "residual": 6757.904725477623
+        },
+        {
+          "case": 9,
+          "actual": 97427.84,
+          "predicted": 97602.02870813702,
+          "residual": -174.18870813702233
+        },
+        {
+          "case": 10,
+          "actual": 122776.86,
+          "predicted": 113093.15712699706,
+          "residual": 9683.702873002941
+        }
+      ]
+    },
+    {
+      "number_of_features": 5,
+      "selected_features": [
+        "R&D Spend",
+        "Administration",
+        "Marketing Spend",
+        "State_Florida",
+        "State_New York"
+      ],
+      "intercept": 54028.0395936458,
+      "coefficients": {
+        "R&D Spend": 0.805630063715367,
+        "Administration": -0.06878788227713212,
+        "Marketing Spend": 0.029855442922634156,
+        "State_Florida": 938.7930061484374,
+        "State_New York": 6.987759966981388
+      },
+      "test_rmse": 9055.957323458464,
+      "test_r_squared": 0.8987266414328637,
+      "test_cases": [
+        {
+          "case": 1,
+          "actual": 134307.35,
+          "predicted": 126362.87908254928,
+          "residual": 7944.47091745073
+        },
+        {
+          "case": 2,
+          "actual": 81005.76,
+          "predicted": 84608.45383633598,
+          "residual": -3602.6938363359804
+        },
+        {
+          "case": 3,
+          "actual": 99937.59,
+          "predicted": 99677.49425146729,
+          "residual": 260.09574853270897
+        },
+        {
+          "case": 4,
+          "actual": 64926.08,
+          "predicted": 46357.46068581842,
+          "residual": 18568.619314181582
+        },
+        {
+          "case": 5,
+          "actual": 125370.37,
+          "predicted": 128750.482885045,
+          "residual": -3380.112885045004
+        },
+        {
+          "case": 6,
+          "actual": 35673.41,
+          "predicted": 50912.417418801706,
+          "residual": -15239.007418801702
+        },
+        {
+          "case": 7,
+          "actual": 105733.54,
+          "predicted": 109741.35032702188,
+          "residual": -4007.8103270218853
+        },
+        {
+          "case": 8,
+          "actual": 107404.34,
+          "predicted": 100643.24281646681,
+          "residual": 6761.0971835331875
+        },
+        {
+          "case": 9,
+          "actual": 97427.84,
+          "predicted": 97599.275745938,
+          "residual": -171.43574593799713
+        },
+        {
+          "case": 10,
+          "actual": 122776.86,
+          "predicted": 113097.42524431698,
+          "residual": 9679.434755683018
+        }
+      ]
+    }
+  ]
+}

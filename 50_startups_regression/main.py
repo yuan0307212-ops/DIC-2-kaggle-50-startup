@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import matplotlib
@@ -129,7 +130,7 @@ def evaluate_feature_counts(
     y_train: pd.Series,
     y_test: pd.Series,
     feature_names: list[str],
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, dict[str, list[dict[str, object]]]]:
     """僅在訓練資料執行 RFE，對固定測試集比較 1 至 5 個特徵。"""
     if len(feature_names) < 5:
         raise ValueError(f"RFE 需要至少 5 個候選特徵，目前只有 {len(feature_names)}。")
@@ -137,6 +138,7 @@ def evaluate_feature_counts(
     selection_scaler = StandardScaler().fit(X_train)
     X_train_scaled = selection_scaler.transform(X_train)
     rows = []
+    model_details = []
     for feature_count in range(1, 6):
         selector = RFE(
             estimator=LinearRegression(), n_features_to_select=feature_count
@@ -147,7 +149,8 @@ def evaluate_feature_counts(
         ]
         model = LinearRegression().fit(X_train[selected], y_train)
         train_metrics = calculate_metrics(y_train, model.predict(X_train[selected]))
-        test_metrics = calculate_metrics(y_test, model.predict(X_test[selected]))
+        test_predictions = model.predict(X_test[selected])
+        test_metrics = calculate_metrics(y_test, test_predictions)
 
         rows.append(
             {
@@ -163,6 +166,30 @@ def evaluate_feature_counts(
                 "Test R-squared": test_metrics["R-squared"],
             }
         )
+        model_details.append(
+            {
+                "number_of_features": feature_count,
+                "selected_features": selected,
+                "intercept": float(model.intercept_),
+                "coefficients": {
+                    name: float(coefficient)
+                    for name, coefficient in zip(selected, model.coef_)
+                },
+                "test_rmse": test_metrics["RMSE"],
+                "test_r_squared": test_metrics["R-squared"],
+                "test_cases": [
+                    {
+                        "case": index + 1,
+                        "actual": float(actual),
+                        "predicted": float(predicted),
+                        "residual": float(actual - predicted),
+                    }
+                    for index, (actual, predicted) in enumerate(
+                        zip(y_test, test_predictions)
+                    )
+                ],
+            }
+        )
         print(
             f"\n特徵數 {feature_count}：{selected}\n"
             f"  訓練 RMSE={train_metrics['RMSE']:,.2f}，"
@@ -171,7 +198,7 @@ def evaluate_feature_counts(
             f"測試 MAE={test_metrics['MAE']:,.2f}"
         )
 
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows), {"models": model_details}
 
 
 def plot_feature_selection(results: pd.DataFrame) -> None:
@@ -278,7 +305,7 @@ def main() -> None:
     download_data()
     data = load_and_explore()
     X_train, X_test, y_train, y_test, feature_names = preprocess(data)
-    results = evaluate_feature_counts(
+    results, model_details = evaluate_feature_counts(
         X_train, X_test, y_train, y_test, feature_names
     )
 
@@ -288,6 +315,8 @@ def main() -> None:
         encoding="utf-8-sig",
         float_format="%.8f",
     )
+    with (OUTPUT_DIR / "model_details.json").open("w", encoding="utf-8") as output_file:
+        json.dump(model_details, output_file, ensure_ascii=False, indent=2)
     plot_feature_selection(results)
     plot_train_test_rmse(results)
     print_overfit_notes(results)

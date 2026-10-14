@@ -104,6 +104,34 @@
     .method { border-top: 2px solid var(--green); padding: 13px 0; }
     .method strong { display: block; font-size: 13px; margin-bottom: 4px; }
     .method p { color: var(--muted); font-size: 12px; margin: 0; }
+    .model-switch { display: grid; gap: 8px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .model-choice { background: white; border: 1px solid var(--line); color: var(--ink); cursor: pointer; font: 600 12px var(--mono); min-height: 46px; }
+    .model-choice[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--lime); }
+    .model-summary { align-items: center; background: var(--green); color: white; display: grid; gap: 18px; grid-template-columns: .65fr 1.5fr .7fr .7fr; margin-top: 10px; padding: 18px 20px; }
+    .model-summary small { color: #c1d6ca; display: block; font: 10px var(--mono); }
+    .model-summary strong { display: block; font-size: 13px; margin-top: 3px; }
+    .model-summary .summary-number { color: var(--lime); font: 600 21px var(--serif); }
+    .analysis-grid { display: grid; gap: 28px; grid-template-columns: 1fr 1fr; }
+    .tool-panel { border-top: 2px solid var(--ink); padding-top: 15px; }
+    .tool-panel h3 { font: 600 18px var(--serif); margin: 0 0 5px; }
+    .tool-panel > p { color: var(--muted); font-size: 12px; margin: 0 0 17px; }
+    .input-row { display: grid; gap: 13px; grid-template-columns: 1fr 1fr; }
+    .input-field label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 5px; }
+    .input-field input, .input-field select { background: white; border: 1px solid var(--line); border-radius: 0; color: var(--ink); font: 13px var(--mono); min-height: 42px; padding: 8px 10px; width: 100%; }
+    .prediction-result { background: var(--lime); margin-top: 14px; padding: 16px; }
+    .prediction-result small { display: block; font-size: 10px; font-weight: 600; }
+    .prediction-result output { display: block; font: 600 31px var(--serif); line-height: 1.3; }
+    .equation { color: #405149; font: 11px/1.7 var(--mono); margin-top: 10px; overflow-wrap: anywhere; }
+    .coefficient-table { min-width: 0; }
+    .coefficient-table th, .coefficient-table td, .residual-table th, .residual-table td { padding: 9px 10px; }
+    .residual-layout { display: grid; gap: 24px; grid-template-columns: 1fr 1fr; }
+    .residual-plot { background: white; border: 1px solid var(--line); padding: 12px; }
+    .residual-plot svg { display: block; height: auto; width: 100%; }
+    .residual-table { min-width: 490px; }
+    .residual-dot { fill: var(--orange); stroke: white; stroke-width: 2; }
+    .residual-zero { stroke: #738079; stroke-dasharray: 5 5; stroke-width: 1.5; }
+    .residual-axis { fill: var(--muted); font: 10px var(--mono); }
+    .selected-row { background: #edf3e7; }
     footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; padding-bottom: 30px; padding-top: 18px; }
     .error { background: #fff1ec; border-left: 3px solid var(--orange); color: #7b3323; padding: 12px 15px; }
     @media (max-width: 720px) {
@@ -114,6 +142,10 @@
       .metric:last-child { border-bottom: 0; }
       .metric-value { font-size: 24px; }
       .chart-grid, .diagnostics, .method-grid { grid-template-columns: 1fr; }
+      .model-switch { grid-template-columns: repeat(5, minmax(48px, 1fr)); overflow-x: auto; }
+      .model-summary { grid-template-columns: 1fr 1fr; }
+      .analysis-grid, .residual-layout { grid-template-columns: 1fr; }
+      .input-row { grid-template-columns: 1fr; }
       section { margin-top: 40px; }
       .section-head { align-items: start; flex-direction: column; gap: 5px; }
       .section-note { text-align: left; }
@@ -145,14 +177,46 @@
     </div>
 
     <section>
-      <div class="section-head"><div><span class="section-index">01 / 模型表現</span><h2>特徵數與預測力</h2></div><p class="section-note">同一測試集 · 藍線標記各特徵數結果</p></div>
+      <div class="section-head"><div><span class="section-index">01 / RFE MODEL LAB</span><h2>選擇模型規格</h2></div><p class="section-note">同一訓練／測試切分 · 按特徵數切換實際擬合模型</p></div>
+      <div class="model-switch" id="model-switch" role="group" aria-label="選擇 RFE 特徵數"></div>
+      <div class="model-summary">
+        <div><small>ACTIVE MODEL</small><strong id="active-model">RFE · k = 1</strong></div>
+        <div><small>SELECTED FEATURES</small><strong id="active-features">載入中</strong></div>
+        <div><small>TEST RMSE</small><strong class="summary-number" id="active-rmse">—</strong></div>
+        <div><small>TEST R²</small><strong class="summary-number" id="active-r2">—</strong></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><div><span class="section-index">02 / LIVE PREDICTION</span><h2>試算新創獲利</h2></div><p class="section-note">預測由目前選定的 RFE 線性模型即時計算</p></div>
+      <div class="analysis-grid">
+        <div class="tool-panel">
+          <h3>投入條件</h3><p>調整數值或所在地，預測結果會即時更新。</p>
+          <div class="input-row">
+            <div class="input-field"><label for="input-rd">研發支出（美元）</label><input id="input-rd" type="number" min="0" step="1000" value="100000"></div>
+            <div class="input-field"><label for="input-admin">行政支出（美元）</label><input id="input-admin" type="number" min="0" step="1000" value="120000"></div>
+            <div class="input-field"><label for="input-marketing">行銷支出（美元）</label><input id="input-marketing" type="number" min="0" step="1000" value="150000"></div>
+            <div class="input-field"><label for="input-state">所在地</label><select id="input-state"><option>California</option><option>Florida</option><option>New York</option></select></div>
+          </div>
+          <div class="prediction-result"><small>模型預測獲利</small><output id="predicted-profit" aria-live="polite">—</output><small id="prediction-terms">—</small></div>
+        </div>
+        <div class="tool-panel">
+          <h3>模型係數</h3><p id="coefficient-caption">係數代表其他條件固定時，特徵與預測獲利的線性關係。</p>
+          <div class="table-wrap"><table class="coefficient-table"><thead><tr><th>參數</th><th>特徵</th><th>估計係數</th></tr></thead><tbody id="coefficients"></tbody></table></div>
+          <div class="equation" id="equation"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><div><span class="section-index">03 / MODEL PERFORMANCE</span><h2>特徵數與預測力</h2></div><p class="section-note">同一測試集 · 藍線標記各特徵數結果</p></div>
       <div class="chart-grid">
         <figure><img src="outputs/feature_selection.png" alt="左圖為測試集 RMSE、右圖為 R-squared 隨特徵數變化的並排折線圖"></figure>
       </div>
     </section>
 
     <section>
-      <div class="section-head"><div><span class="section-index">02 / 測試集指標</span><h2>特徵選擇結果</h2></div><p class="section-note">RFE 僅於訓練資料 fit；最佳列依測試 RMSE 標示</p></div>
+      <div class="section-head"><div><span class="section-index">04 / TEST SET SCORECARD</span><h2>特徵選擇結果</h2></div><p class="section-note">RFE 僅於訓練資料 fit；最佳列依測試 RMSE 標示</p></div>
       <div class="table-wrap"><table>
         <thead><tr><th>特徵數</th><th>選入特徵</th><th>MSE</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead>
         <tbody id="results"><tr><td colspan="6">正在讀取模型結果…</td></tr></tbody>
@@ -160,10 +224,18 @@
     </section>
 
     <section>
-      <div class="section-head"><div><span class="section-index">03 / 誤差診斷</span><h2>訓練與測試的落差</h2></div><p class="section-note">誤差落差可提示泛化風險，不代表因果關係</p></div>
+      <div class="section-head"><div><span class="section-index">05 / GENERALIZATION CHECK</span><h2>訓練與測試的落差</h2></div><p class="section-note">誤差落差可提示泛化風險，不代表因果關係</p></div>
       <div class="diagnostics">
         <figure><img src="outputs/train_test_rmse.png" alt="比較不同特徵數的 Training RMSE 和 Testing RMSE"></figure>
         <div><span class="eyebrow" style="color:var(--green)">讀圖提示</span><p id="diagnosis">Training 與 Testing RMSE 越接近，通常代表這次切分下的泛化落差較小；兩者都高則可能欠擬合。只有 50 筆資料，判讀仍需保守。</p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><div><span class="section-index">06 / TEST RESIDUALS</span><h2>測試集殘差與離群點</h2></div><p class="section-note">以目前選定模型計算 · 殘差 = 實際獲利 − 預測獲利</p></div>
+      <div class="residual-layout">
+        <div class="residual-plot"><svg id="residual-chart" viewBox="0 0 900 220" role="img" aria-label="測試集殘差散佈圖"></svg></div>
+        <div class="table-wrap"><table class="residual-table"><thead><tr><th>測試樣本</th><th>實際獲利</th><th>預測獲利</th><th>殘差</th></tr></thead><tbody id="residuals"></tbody></table></div>
       </div>
     </section>
 
@@ -205,22 +277,150 @@
     function number(value, digits = 2) {
       return Number(value).toLocaleString("zh-TW", { minimumFractionDigits: digits, maximumFractionDigits: digits });
     }
+    const featureLabels = {
+      "R&D Spend": "研發支出",
+      "Administration": "行政支出",
+      "Marketing Spend": "行銷支出",
+      "State_Florida": "佛羅里達州",
+      "State_New York": "紐約州"
+    };
+    let modelRecords = [];
+    let activeModel = null;
+
+    function updatePrediction() {
+      if (!activeModel) return;
+      const inputs = {
+        "R&D Spend": Number(document.querySelector("#input-rd").value) || 0,
+        "Administration": Number(document.querySelector("#input-admin").value) || 0,
+        "Marketing Spend": Number(document.querySelector("#input-marketing").value) || 0,
+        "State_Florida": document.querySelector("#input-state").value === "Florida" ? 1 : 0,
+        "State_New York": document.querySelector("#input-state").value === "New York" ? 1 : 0
+      };
+      let prediction = activeModel.intercept;
+      activeModel.selected_features.forEach(feature => {
+        prediction += activeModel.coefficients[feature] * inputs[feature];
+      });
+      document.querySelector("#predicted-profit").textContent = `$${number(prediction)}`;
+      document.querySelector("#prediction-terms").textContent = `啟用特徵：${activeModel.selected_features.map(name => featureLabels[name] || name).join("、")}`;
+    }
+
+    function addTableRow(body, values, className = "") {
+      const row = document.createElement("tr");
+      if (className) row.className = className;
+      values.forEach(value => {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.append(cell);
+      });
+      body.append(row);
+    }
+
+    function renderCoefficients(model) {
+      const body = document.querySelector("#coefficients");
+      body.replaceChildren();
+      addTableRow(body, ["截距", "基準獲利", number(model.intercept)]);
+      model.selected_features.forEach(feature => {
+        addTableRow(body, ["β", featureLabels[feature] || feature, number(model.coefficients[feature], 6)]);
+      });
+      const terms = model.selected_features.map(feature => {
+        const coefficient = model.coefficients[feature];
+        return `${coefficient < 0 ? "−" : "+"} ${number(Math.abs(coefficient), 6)} × ${featureLabels[feature] || feature}`;
+      });
+      document.querySelector("#equation").textContent = `Profit = ${number(model.intercept)} ${terms.join(" ")}`;
+      updatePrediction();
+    }
+
+    function renderResiduals(model) {
+      const svg = document.querySelector("#residual-chart");
+      const cases = model.test_cases;
+      const maxAbs = Math.max(...cases.map(item => Math.abs(item.residual)), 1);
+      const zeroY = 108;
+      const plotHeight = 78;
+      svg.replaceChildren();
+
+      const zeroLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      zeroLine.setAttribute("x1", "48");
+      zeroLine.setAttribute("x2", "880");
+      zeroLine.setAttribute("y1", String(zeroY));
+      zeroLine.setAttribute("y2", String(zeroY));
+      zeroLine.setAttribute("class", "residual-zero");
+      svg.append(zeroLine);
+
+      const zeroLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      zeroLabel.setAttribute("x", "4");
+      zeroLabel.setAttribute("y", String(zeroY + 4));
+      zeroLabel.setAttribute("class", "residual-axis");
+      zeroLabel.textContent = "0";
+      svg.append(zeroLabel);
+
+      cases.forEach((item, index) => {
+        const x = 58 + index * (810 / Math.max(cases.length - 1, 1));
+        const y = zeroY - (item.residual / maxAbs) * plotHeight;
+        const point = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        point.setAttribute("cx", String(x));
+        point.setAttribute("cy", String(y));
+        point.setAttribute("r", "7");
+        point.setAttribute("class", "residual-dot");
+        const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+        title.textContent = `測試樣本 ${item.case}：殘差 ${number(item.residual)}`;
+        point.append(title);
+        svg.append(point);
+      });
+
+      const body = document.querySelector("#residuals");
+      body.replaceChildren();
+      [...cases].sort((left, right) => Math.abs(right.residual) - Math.abs(left.residual)).forEach(item => {
+        addTableRow(body, [
+          `#${String(item.case).padStart(2, "0")}`,
+          number(item.actual),
+          number(item.predicted),
+          `${item.residual > 0 ? "+" : ""}${number(item.residual)}`
+        ]);
+      });
+    }
+
+    function selectModel(featureCount) {
+      activeModel = modelRecords.find(model => model.number_of_features === featureCount);
+      if (!activeModel) return;
+      document.querySelectorAll(".model-choice").forEach(button => {
+        button.setAttribute("aria-pressed", String(Number(button.dataset.featureCount) === featureCount));
+      });
+      document.querySelectorAll("#results tr[data-feature-count]").forEach(row => {
+        row.classList.toggle("selected-row", Number(row.dataset.featureCount) === featureCount);
+      });
+      document.querySelector("#active-model").textContent = `RFE · k = ${featureCount}`;
+      document.querySelector("#active-features").textContent = activeModel.selected_features.map(name => featureLabels[name] || name).join("、");
+      document.querySelector("#active-rmse").textContent = number(activeModel.test_rmse);
+      document.querySelector("#active-r2").textContent = number(activeModel.test_r_squared, 4);
+      renderCoefficients(activeModel);
+      renderResiduals(activeModel);
+    }
+
     async function loadResults() {
       const body = document.querySelector("#results");
       try {
-        const response = await fetch("outputs/feature_selection_results.csv", { cache: "no-store" });
-        if (!response.ok) throw new Error("找不到結果 CSV，請先執行 python main.py。");
-        const records = parseCSV(await response.text());
+        const [csvResponse, modelResponse] = await Promise.all([
+          fetch("outputs/feature_selection_results.csv", { cache: "no-store" }),
+          fetch("outputs/model_details.json", { cache: "no-store" })
+        ]);
+        if (!csvResponse.ok || !modelResponse.ok) throw new Error("找不到分析結果，請先執行 python main.py。");
+        const [csvText, modelData] = await Promise.all([csvResponse.text(), modelResponse.json()]);
+        const records = parseCSV(csvText);
+        modelRecords = modelData.models;
         const best = records.reduce((current, item) => Number(item["Test RMSE"]) < Number(current["Test RMSE"]) ? item : current);
         document.querySelector("#best-rmse").textContent = number(best["Test RMSE"]);
         document.querySelector("#best-count").textContent = `${best["Number of Features"]} 個`;
         document.querySelector("#best-r2").textContent = number(best["Test R-squared"], 4);
         body.innerHTML = records.map(item => {
           const isBest = item === best;
-          return `<tr class="${isBest ? "best-row" : ""}"><td class="number">${item["Number of Features"]}</td><td class="feature-list">${features(item["Selected Features"]).join(" · ")}</td><td class="number">${number(item["Test MSE"], 0)}</td><td class="number">${number(item["Test RMSE"])}</td><td class="number">${number(item["Test MAE"])}</td><td class="number">${number(item["Test R-squared"], 4)}</td></tr>`;
+          return `<tr class="${isBest ? "best-row" : ""}" data-feature-count="${item["Number of Features"]}"><td class="number">${item["Number of Features"]}</td><td class="feature-list">${features(item["Selected Features"]).join(" · ")}</td><td class="number">${number(item["Test MSE"], 0)}</td><td class="number">${number(item["Test RMSE"])}</td><td class="number">${number(item["Test MAE"])}</td><td class="number">${number(item["Test R-squared"], 4)}</td></tr>`;
         }).join("");
         const train = Number(best["Train RMSE"]), test = Number(best["Test RMSE"]);
         document.querySelector("#diagnosis").textContent = `最低測試 RMSE 出現在 ${best["Number of Features"]} 個特徵。該模型訓練 RMSE 為 ${number(train)}、測試 RMSE 為 ${number(test)}，差值 ${number(test - train)}。請同時參考各特徵數的訓練／測試曲線；小樣本單次切分只能作為診斷線索。`;
+        document.querySelectorAll(".input-field input, .input-field select").forEach(input => input.addEventListener("input", updatePrediction));
+        document.querySelector("#model-switch").innerHTML = modelRecords.map(model => `<button class="model-choice" type="button" data-feature-count="${model.number_of_features}" aria-pressed="false">k = ${model.number_of_features}</button>`).join("");
+        document.querySelectorAll(".model-choice").forEach(button => button.addEventListener("click", () => selectModel(Number(button.dataset.featureCount))));
+        selectModel(Number(best["Number of Features"]));
       } catch (error) {
         body.innerHTML = `<tr><td colspan="6"><div class="error">${error.message} 若以 file:// 開啟，請改用 README 的本機伺服器指令。</div></td></tr>`;
         ["#best-rmse", "#best-count", "#best-r2"].forEach(selector => { document.querySelector(selector).textContent = "—"; });

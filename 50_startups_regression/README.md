@@ -10,7 +10,8 @@
 ├── outputs/
 │   ├── feature_selection.png
 │   ├── train_test_rmse.png
-│   └── feature_selection_results.csv
+│   ├── feature_selection_results.csv
+│   └── model_details.json
 ├── index.html
 ├── main.py
 ├── requirements.txt
@@ -27,7 +28,7 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-程式會在資料不存在時下載 CSV 至 `data/`，並在 `outputs/` 產生兩張圖與完整指標 CSV。若要在瀏覽器預覽分析頁，請從此資料夾啟動靜態伺服器：
+程式會在資料不存在時下載 CSV 至 `data/`，並在 `outputs/` 產生兩張圖、完整指標 CSV，以及供儀表板互動預測和殘差診斷使用的模型明細 JSON。若要在瀏覽器預覽分析頁，請從此資料夾啟動靜態伺服器：
 
 ```bash
 python -m http.server 8000
